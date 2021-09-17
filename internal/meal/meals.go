@@ -1,10 +1,11 @@
 package meal
 
 var (
+	// primitiveMeals TODO
 	primitiveMeals = []meal{
 		{
-			name:       "水果冰淇淋",
-			attraction: 200,
+			Name:       "水果冰淇淋",
+			Attraction: 200,
 			Foods: map[string]int{
 				"冰块": 2,
 				"西瓜": 2,
@@ -13,8 +14,8 @@ var (
 			},
 		},
 		{
-			name:       "果蔬沙拉",
-			attraction: 200,
+			Name:       "果蔬沙拉",
+			Attraction: 200,
 			Foods: map[string]int{
 				"卷心菜": 4,
 				"松茸":  2,
@@ -22,16 +23,16 @@ var (
 			},
 		},
 		{
-			name:       "香煎三文鱼",
-			attraction: 140,
+			Name:       "香煎三文鱼",
+			Attraction: 140,
 			Foods: map[string]int{
 				"三文鱼": 4,
 				"蜂蜜":  2,
 			},
 		},
 		{
-			name:       "海鲜汤",
-			attraction: 140,
+			Name:       "海鲜汤",
+			Attraction: 140,
 			Foods: map[string]int{
 				"苍鱼":  2,
 				"松茸":  1,
@@ -40,8 +41,8 @@ var (
 			},
 		},
 		{
-			name:       "蜂蜜烧烤",
-			attraction: 140,
+			Name:       "蜂蜜烧烤",
+			Attraction: 140,
 			Foods: map[string]int{
 				"里脊": 2,
 				"蜂蜜": 1,
@@ -50,8 +51,8 @@ var (
 			},
 		},
 		{
-			name:       "蘑菇肉串",
-			attraction: 200,
+			Name:       "蘑菇肉串",
+			Attraction: 200,
 			Foods: map[string]int{
 				"青菇": 2,
 				"松茸": 1,
@@ -60,8 +61,8 @@ var (
 			},
 		},
 		{
-			name:       "什锦海鲜",
-			attraction: 200,
+			Name:       "什锦海鲜",
+			Attraction: 200,
 			Foods: map[string]int{
 				"苍鱼":  3,
 				"三文鱼": 3,
@@ -70,15 +71,15 @@ var (
 			},
 		},
 		{
-			name:       "馒头",
-			attraction: 80,
+			Name:       "馒头",
+			Attraction: 80,
 			Foods: map[string]int{
 				"面粉": 4,
 			},
 		},
 		{
-			name:       "蔬菜炒饭",
-			attraction: 140,
+			Name:       "蔬菜炒饭",
+			Attraction: 140,
 			Foods: map[string]int{
 				"米":   2,
 				"辣椒":  1,
@@ -87,8 +88,8 @@ var (
 			},
 		},
 		{
-			name:       "营养煨炖",
-			attraction: 140,
+			Name:       "营养煨炖",
+			Attraction: 140,
 			Foods: map[string]int{
 				"牛排": 1,
 				"青菇": 2,
@@ -97,8 +98,8 @@ var (
 			},
 		},
 		{
-			name:       "刺身拼盘",
-			attraction: 140,
+			Name:       "刺身拼盘",
+			Attraction: 140,
 			Foods: map[string]int{
 				"三文鱼": 2,
 				"冰块":  1,
@@ -107,8 +108,8 @@ var (
 			},
 		},
 		{
-			name:       "滑肉粥",
-			attraction: 200,
+			Name:       "滑肉粥",
+			Attraction: 200,
 			Foods: map[string]int{
 				"里脊": 2,
 				"松茸": 1,
@@ -116,8 +117,8 @@ var (
 			},
 		},
 		{
-			name:       "三文鱼寿司",
-			attraction: 200,
+			Name:       "三文鱼寿司",
+			Attraction: 200,
 			Foods: map[string]int{
 				"三文鱼": 9,
 				"冰块":  3,
@@ -126,8 +127,8 @@ var (
 			},
 		},
 		{
-			name:       "炖肉",
-			attraction: 200,
+			Name:       "炖肉",
+			Attraction: 200,
 			Foods: map[string]int{
 				"里脊":  5,
 				"青菇":  1,
@@ -135,40 +136,40 @@ var (
 			},
 		},
 		{
-			name:       "糖果",
-			attraction: 140,
+			Name:       "糖果",
+			Attraction: 140,
 			Foods: map[string]int{
 				"苹果": 3,
 				"蜂蜜": 3,
 			},
 		},
 		{
-			name:       "水果蜜饯",
-			attraction: 140,
+			Name:       "水果蜜饯",
+			Attraction: 140,
 			Foods: map[string]int{
 				"草莓": 4,
 				"蜂蜜": 2,
 			},
 		},
 		{
-			name:       "冰镇果汁",
-			attraction: 140,
+			Name:       "冰镇果汁",
+			Attraction: 140,
 			Foods: map[string]int{
 				"西瓜": 2,
 				"冰块": 4,
 			},
 		},
 		{
-			name:       "蜂蜜牛奶",
-			attraction: 200,
+			Name:       "蜂蜜牛奶",
+			Attraction: 200,
 			Foods: map[string]int{
 				"牛奶": 4,
 				"蜂蜜": 4,
 			},
 		},
 		{
-			name:       "水果咕噜肉",
-			attraction: 200,
+			Name:       "水果咕噜肉",
+			Attraction: 200,
 			Foods: map[string]int{
 				"里脊": 6,
 				"面粉": 1,

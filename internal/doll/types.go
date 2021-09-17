@@ -2,8 +2,18 @@ package doll
 
 var (
 	// SimplifiedDolls TODO
-	SimplifiedDolls = make(map[string]Doll)
+	SimplifiedDolls = make(map[string]int)
 )
+
+// GetDollIdByname TODO
+func GetDollIdByname(name string) int {
+	return SimplifiedDolls[name]
+}
+
+// GetDollById TODO
+func GetDollById(id int) Doll {
+	return dolls[id]
+}
 
 // Doll TODO
 type Doll struct {
@@ -13,7 +23,7 @@ type Doll struct {
 
 // InitDolls TODO
 func InitDolls() {
-	for _, v := range dolls {
-		SimplifiedDolls[v.name] = v
+	for k, v := range dolls {
+		SimplifiedDolls[v.name] = k
 	}
 }

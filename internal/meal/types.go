@@ -1,28 +1,30 @@
 package meal
 
 import (
+	"soultide/internal/blocks"
 	"soultide/internal/food"
 )
 
 type meal struct {
-	name       string
-	attraction int
+	Name       string
+	Attraction int
 	Foods      map[string]int
 }
 
 var (
 	// SimplifiedMeals TODO
-	SimplifiedMeals = make(map[string]Meal)
-	// PrimitiveMeals TODO
-	PrimitiveMeals = make(map[string]meal)
+	SimplifiedMeals = make(map[string]int) // 名字查询菜的索引
+
+	// ParsedMeals TODO
+	ParsedMeals = make([]Meal, len(primitiveMeals))
 )
 
 // Meal TODO
 type Meal struct {
 	Name       string
-	TimeCost   float64
-	CoinCost   float64
 	Attraction int
+	FoodCnt    int
+	Foods      []int // 每个槽是对应的食材的需求数量
 }
 
 func addNewMeal(m meal, ms []meal) {
@@ -36,15 +38,26 @@ func InitMeals() {
 
 // InitMeals TODO
 func initMeals(meals []meal) {
-	for _, v := range meals {
+	for k, v := range meals {
 		var m Meal
-		m.Attraction = v.attraction
-		m.Name = v.name
-		for name, f := range v.Foods {
-			m.TimeCost += food.SimpifiedFood[name].TimeCost * float64(f)
-			m.CoinCost += food.SimpifiedFood[name].CoinCost * float64(f)
+		m.Attraction = v.Attraction
+		m.Name = v.Name
+		m.Foods = blocks.NewFoodSlice()
+		for k, v := range v.Foods {
+			m.Foods[food.GetFoodIdByName(k)] = v
 		}
-		SimplifiedMeals[m.Name] = m
-		PrimitiveMeals[m.Name] = v
+		ParsedMeals[k] = m
+		SimplifiedMeals[v.Name] = k
 	}
+
+}
+
+// GetMealById TODO
+func GetMealById(id int) Meal {
+	return ParsedMeals[id]
+}
+
+// GetMealIdByName TODO
+func GetMealIdByName(name string) int {
+	return SimplifiedMeals[name]
 }

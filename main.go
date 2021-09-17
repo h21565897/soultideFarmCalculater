@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+	"soultide/internal/blocks"
 	"soultide/internal/calculate"
 	"soultide/internal/doll"
 	"soultide/internal/food"
 	"soultide/internal/meal"
+	"time"
 )
 
 func init() {
 	food.InitFood()
 	meal.InitMeals()
 	doll.InitDolls()
+	blocks.InitBlock()
 }
 
 func main() {
@@ -21,44 +24,54 @@ func main() {
 		http.ListenAndServe("127.0.0.1:8899", nil)
 	}()
 	uf := map[string]int{
-		"面粉":  26,
-		"苹果":  12,
-		"西瓜":  15,
-		"青菇":  1,
-		"米":   1,
-		"草莓":  2,
-		"卷心菜": 6,
-		"松茸":  4,
-		"里脊":  8,
-		"苍鱼":  24,
-		"蜂蜜":  13,
-		"牛奶":  9,
-		"牛排":  1,
-		"三文鱼": 2,
-		"辣椒":  25,
-		"冰块":  12,
+		"面粉":  0,
+		"苹果":  0,
+		"西瓜":  0,
+		"青菇":  0,
+		"米":   0,
+		"草莓":  0,
+		"卷心菜": 0,
+		"松茸":  0,
+		"里脊":  0,
+		"苍鱼":  0,
+		"蜂蜜":  0,
+		"牛奶":  0,
+		"牛排":  0,
+		"三文鱼": 0,
+		"辣椒":  0,
+		"冰块":  0,
 	}
 	us := map[string]int{
-		"面粉":  1,
-		"苹果":  7,
-		"西瓜":  9,
-		"青菇":  7,
-		"米":   15,
-		"草莓":  9,
-		"卷心菜": 10,
-		"松茸":  10,
+		"面粉":  0,
+		"苹果":  0,
+		"西瓜":  0,
+		"青菇":  0,
+		"米":   0,
+		"草莓":  0,
+		"卷心菜": 0,
+		"松茸":  0,
 	}
+	tm := time.Now()
 	dollName := "柯露雪儿"
-	s := calculate.Solve(dollName, 4000, 50, 100, uf, us)
+	config := calculate.SolverConfig{
+		UserFoods:           uf,
+		UserSeeds:           us,
+		Name:                dollName,
+		CoinThreshold:       5000,
+		AttractionDeviation: 200,
+		AttractionTarget:    2000,
+	}
+	s := calculate.Solve(config)
 	fmt.Println("当前人偶：", dollName)
 	fmt.Println("当前需要食物:")
 	fmt.Println("共获得好感:", s.ResAttraction)
+	dollId := doll.GetDollIdByname(dollName)
 	for k, v := range s.Result {
-		fmt.Println(k, ":", v, "份")
+		fmt.Println(doll.GetDollById(dollId).Favorites[k], ":", v, "份")
 	}
 	fmt.Println("推荐巡查的街区:")
 	for k, v := range s.ResBlocks {
-		fmt.Println(k, v, "次")
+		fmt.Println(blocks.GetBlockByBlockId(k), v, "次")
 	}
 	fmt.Println("当前每点好感度消耗金币数:", s.ResCoinCost/float64(s.ResAttraction), "共消耗金币数:", s.ResCoinCost)
 	fmt.Println("当前每点好感度消耗小时数:", s.ResTimeCost/float64(s.ResAttraction), "共消耗小时数:", s.ResTimeCost)
@@ -68,22 +81,22 @@ func main() {
 	fmt.Println("当前需求食材:")
 	for k, v := range s.ResNeededFood {
 		if v == 0 {
-			fmt.Println(k, ":", v, "份", "可通过已经有的和巡查满足要求")
+			fmt.Println(food.GetFoodByFoodId(k).Name, ":", v, "份", "可通过已经有的和巡查满足要求")
 			continue
 		}
-		if food.SimpifiedFood[k].TimeCost == 0 {
-			fmt.Println(k, ":", v, "份", "该食材在商店购买")
+		if food.GetFoodByFoodId(k).TimeCost == 0 {
+			fmt.Println(food.GetFoodByFoodId(k).Name, ":", v, "份", "该食材在商店购买")
 		} else {
-			fmt.Println(k, ":", v, "份", "该食材种地获得，需要种：", v/5+1, "块地，请合理规划")
+			fmt.Println(food.GetFoodByFoodId(k).Name, ":", v, "份", "该食材种地获得，需要种：", v/5+1, "块地，请合理规划")
 		}
 	}
 	fmt.Println("当前需要种子:")
 	for k, v := range s.ResNeededFood {
-		if food.SimpifiedFood[k].TimeCost != 0 {
-			if v > us[k]*5 {
-				fmt.Println("当前需要", k, "种子", (v-us[k]*5)/5+1, "份")
+		if food.GetFoodByFoodId(k).TimeCost != 0 {
+			if v > us[food.GetFoodByFoodId(k).Name]*5 {
+				fmt.Println("当前需要", food.GetFoodByFoodId(k).Name, "种子", (v-us[food.GetFoodByFoodId(k).Name]*5)/5+1, "份")
 			}
 		}
 	}
-
+	fmt.Println("耗时：", time.Since(tm))
 }

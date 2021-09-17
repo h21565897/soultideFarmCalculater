@@ -9,8 +9,24 @@ const (
 
 var (
 	// SimpifiedFood TODO
-	SimpifiedFood = make(map[string]Food)
+	SimpifiedFood = make(map[string]int) // 根据名字查询索引
+
+	// ParsedFood TODO
+	ParsedFood = make([]Food, len(primitiveFood))
+
+	// FoodCnt TODO
+	FoodCnt int
 )
+
+// GetFoodIdByName TODO
+func GetFoodIdByName(name string) int {
+	return SimpifiedFood[name]
+}
+
+// GetFoodByFoodId TODO
+func GetFoodByFoodId(id int) Food {
+	return ParsedFood[id]
+}
 
 type food struct {
 	name    string
@@ -21,6 +37,7 @@ type food struct {
 // 解析之后的食材（计算时间消耗和金币消耗）
 type Food struct {
 	Name     string
+	InStore  bool
 	TimeCost float64
 	CoinCost float64
 }
@@ -31,7 +48,7 @@ func InitFood() {
 }
 
 func parseFood(foods []food) {
-	for _, v := range foods {
+	for k, v := range foods {
 		var nFood Food
 		if v.inSotre {
 			nFood = Food{
@@ -46,6 +63,9 @@ func parseFood(foods []food) {
 				CoinCost: SeedPrice / 5,
 			}
 		}
-		SimpifiedFood[nFood.Name] = nFood
+		nFood.InStore = v.inSotre
+		ParsedFood[k] = nFood
+		SimpifiedFood[nFood.Name] = k
 	}
+	FoodCnt = len(ParsedFood)
 }

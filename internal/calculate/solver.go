@@ -8,21 +8,28 @@ import (
 )
 
 type solver struct {
-	meals     []pMeal
-	userFoods map[string]int // 当前拥有的数量
-	userSeeds map[string]int // 拥有的种子
+	mealCnt    int
+	index2Meal []int // 每个槽位对应的菜索引
+	seeds      []int // 种子的数量
+	foods      []int // 食材的数量
 
-	threshold           float64
-	acceptableDeviation int
-	targetAttraction    int
+	coinThreshold       float64
+	attractionDeviation int
+	attractionTarget    int
 
 	res Result
 
 	p currParams
 }
-type pMeal struct {
-	maxCount int
-	meal     meal.Meal
+
+// SolverConfig TODO
+type SolverConfig struct {
+	UserFoods           map[string]int // 当前拥有的数量
+	UserSeeds           map[string]int // 拥有的种子
+	Name                string         // 人偶名字
+	CoinThreshold       float64        // 花费的临界值
+	AttractionDeviation int
+	AttractionTarget    int
 }
 
 type currParams struct {
@@ -32,55 +39,53 @@ type currParams struct {
 	currTimeSeed   float64 // 种子消耗时间
 	currTimeTrue   float64
 	currCoinCost   float64
-	currRes        map[string]int
-	currNeededFood map[string]int
-	currBlocks     map[string]int
+	currRes        []int // 当前菜，
+	currNeededFood []int // 当前需要的食物
+	currBlocks     []int
 }
 
 // Result TODO
 type Result struct {
-	Result           map[string]int
+	Result           []int
 	ResTimeCost      float64
 	ResTimeCostFarm  float64 // 种地
 	ResTimeCostStore float64 // 商店直接买
 	ResTimeCostSeed  float64 // 买种子的消耗
 	ResCoinCost      float64
 	ResAttraction    int
-	ResNeededFood    map[string]int
-	ResBlocks        map[string]int
+	ResNeededFood    []int
+	ResBlocks        []int
 }
 
 func (s *solver) validate() bool {
-	if s.p.currAttraction > s.targetAttraction+s.acceptableDeviation ||
-		s.p.currAttraction < s.targetAttraction-s.acceptableDeviation {
+	if s.p.currAttraction > s.attractionTarget+s.attractionDeviation ||
+		s.p.currAttraction < s.attractionTarget-s.attractionDeviation {
 		return false
 	}
 	// 统计当前的需要的食物总量
-	for k, v := range s.p.currRes {
-		if v > 0 {
-			for n, m := range meal.PrimitiveMeals[k].Foods {
-				s.p.currNeededFood[n] += m * v
+	for mealIndex, mealNum := range s.p.currRes {
+		if mealNum > 0 {
+			currMeal := meal.GetMealById(s.index2Meal[mealIndex])
+			for foodId, num := range currMeal.Foods {
+				s.p.currNeededFood[foodId] += num * mealNum
+				s.p.currCoinCost += food.GetFoodByFoodId(foodId).CoinCost * float64(num*mealNum)
 			}
 		}
 	}
 	// 减去已经有的
-	for k, v := range s.p.currNeededFood {
-		if n, ok := s.userFoods[k]; ok {
-			if v > n {
-				s.p.currNeededFood[k] = v - n
-			} else {
-				s.p.currNeededFood[k] = 0
-			}
+	for foodId, num := range s.p.currNeededFood {
+		if num > s.foods[foodId] {
+			s.p.currNeededFood[foodId] -= s.foods[foodId]
+		} else {
+			s.p.currNeededFood[foodId] = 0
 		}
-		// 先直接计算一波花费
-		s.p.currCoinCost += food.SimpifiedFood[k].CoinCost * float64(s.p.currNeededFood[k])
 	}
 	// 花费已经超过了
-	if s.p.currCoinCost/float64(s.p.currAttraction) > s.threshold {
+	if s.p.currCoinCost/float64(s.p.currAttraction) > s.coinThreshold {
 		return false
 	}
 	// 尝试街区
-	blockSolver := blocks.NewBlockSlover(s.p.currNeededFood, s.userSeeds)
+	blockSolver := blocks.NewBlockSlover(s.p.currNeededFood, s.seeds)
 	res := blockSolver.Solve()
 	s.p.currTimeTrue = res.ResTimeCost
 	s.p.currNeededFood = res.ResFoodNeeded
@@ -88,20 +93,19 @@ func (s *solver) validate() bool {
 	s.p.currTimeCost = res.FarmTimeCost
 	s.p.currBlocks = res.ResResult
 	s.p.currTimeSeed = res.SeedTimeCost
+	s.p.currCoinCost = res.ResCoinCost
 	return true
 }
 
 func (s *solver) solve(depth int) {
-	if depth == len(s.meals) {
-		s.p.reset2()
+	if depth == s.mealCnt {
+		s.resetCurrParam()
 		if !s.validate() {
 			return
 		}
 		if s.p.currTimeTrue < s.res.ResTimeCost {
-			s.res.Result = make(map[string]int)
-			for k, v := range s.p.currRes {
-				s.res.Result[k] = v
-			}
+			s.res.Result = NewMealSliceByCnt(s.mealCnt)
+			copy(s.res.Result, s.p.currRes)
 			s.res.ResTimeCost = s.p.currTimeTrue
 			s.res.ResCoinCost = s.p.currCoinCost
 			s.res.ResAttraction = s.p.currAttraction
@@ -116,67 +120,74 @@ func (s *solver) solve(depth int) {
 		}
 		return
 	}
-	currMeal := s.meals[depth]
-	// 取当时的
-	currsolver := *s
 
-	for i := 0; i <= currMeal.maxCount; i++ {
-		s.p.currAttraction = currsolver.p.currAttraction + currMeal.meal.Attraction*i
-		s.p.currRes[currMeal.meal.Name] = i
+	currMealId := s.index2Meal[depth]
+	currMeal := meal.ParsedMeals[currMealId]
+	maxCount := s.attractionTarget / currMeal.Attraction
+	currAttraction := s.p.currAttraction
+	for i := 0; i <= maxCount; i++ {
+		s.p.currAttraction = currAttraction + currMeal.Attraction*i
+		s.p.currRes[depth] = i
 		s.solve(depth + 1)
 	}
 
 }
-func (s *currParams) reset2() {
-	s.currCoinCost = 0
-	s.currTimeCost = 0
-	s.currNeededFood = make(map[string]int)
-	s.currTimeWait = 0
-	s.currTimeTrue = 0
+func (s *solver) resetCurrParam() {
+	s.p.currCoinCost = 0
+	s.p.currTimeCost = 0
+	s.p.currNeededFood = blocks.NewFoodSlice()
+	s.p.currTimeWait = 0
+	s.p.currTimeTrue = 0
 }
 
-func (s *currParams) reset() {
-	s.currCoinCost = 0
-	s.currTimeCost = 0
-	s.currAttraction = 0
-	s.currRes = make(map[string]int)
-	s.currNeededFood = make(map[string]int)
-	s.currTimeWait = 0
-	s.currTimeTrue = 0
+// NewMealSliceByCnt TODO
+func NewMealSliceByCnt(cnt int) []int {
+	return make([]int, cnt)
+}
+
+func (s *solver) reset() {
+	s.res.ResTimeCost = 99999
+	s.resetCurrParam()
+	s.p.currRes = NewMealSliceByCnt(s.mealCnt)
 }
 
 // NewSolver TODO
-func NewSolver(dollName string, targetAttraction int, threshold float64, acceptableDeviation int,
-	userFoods map[string]int, userSeeds map[string]int) *solver {
+func NewSolver(config SolverConfig) *solver {
+	dollId := doll2.GetDollIdByname(config.Name)
+	doll := doll2.GetDollById(dollId)
 	s := &solver{
-		meals:               nil,
-		threshold:           threshold,
-		acceptableDeviation: acceptableDeviation,
-		targetAttraction:    targetAttraction,
+		mealCnt:             len(doll.Favorites),
+		index2Meal:          nil,
+		seeds:               nil,
+		foods:               nil,
+		coinThreshold:       0,
+		attractionDeviation: 0,
+		attractionTarget:    0,
 		res:                 Result{},
 		p:                   currParams{},
-		userFoods:           userFoods,
-		userSeeds:           userSeeds,
 	}
-	currDoll := doll2.SimplifiedDolls[dollName]
-	s.meals = make([]pMeal, 0, 100)
-	for _, v := range currDoll.Favorites {
-		pm := pMeal{
-			maxCount: targetAttraction / meal.SimplifiedMeals[v].Attraction,
-			meal:     meal.SimplifiedMeals[v],
-		}
-		s.meals = append(s.meals, pm)
+	s.index2Meal = make([]int, s.mealCnt)
+	for k, v := range doll.Favorites {
+		s.index2Meal[k] = meal.GetMealIdByName(v)
 	}
-	s.res.ResCoinCost = 999999
-	s.res.ResTimeCost = 999999
-	s.p.reset()
+	s.foods = blocks.NewFoodSlice()
+	for k, v := range config.UserFoods {
+		s.foods[food.GetFoodIdByName(k)] = v
+	}
+	s.seeds = blocks.NewFoodSlice()
+	for k, v := range config.UserSeeds {
+		s.seeds[food.GetFoodIdByName(k)] = v
+	}
+	s.coinThreshold = config.CoinThreshold
+	s.attractionDeviation = config.AttractionDeviation
+	s.attractionTarget = config.AttractionTarget
+	s.reset()
 	return s
 }
 
 // Solve TODO
-func Solve(name string, target int, threshold float64, acceptableDeviation int, userFoods map[string]int,
-	userSeeds map[string]int) Result {
-	solver := NewSolver(name, target, threshold, acceptableDeviation, userFoods, userSeeds)
+func Solve(config SolverConfig) Result {
+	solver := NewSolver(config)
 	solver.solve(0)
 	return solver.res
 }
