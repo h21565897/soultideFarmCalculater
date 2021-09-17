@@ -134,5 +134,46 @@ var (
 				"卷心菜": 2,
 			},
 		},
+		{
+			name:       "糖果",
+			attraction: 140,
+			Foods: map[string]int{
+				"苹果": 3,
+				"蜂蜜": 3,
+			},
+		},
+		{
+			name:       "水果蜜饯",
+			attraction: 140,
+			Foods: map[string]int{
+				"草莓": 4,
+				"蜂蜜": 2,
+			},
+		},
+		{
+			name:       "冰镇果汁",
+			attraction: 140,
+			Foods: map[string]int{
+				"西瓜": 2,
+				"冰块": 4,
+			},
+		},
+		{
+			name:       "蜂蜜牛奶",
+			attraction: 200,
+			Foods: map[string]int{
+				"牛奶": 4,
+				"蜂蜜": 4,
+			},
+		},
+		{
+			name:       "水果咕噜肉",
+			attraction: 200,
+			Foods: map[string]int{
+				"里脊": 6,
+				"面粉": 1,
+				"蜂蜜": 1,
+			},
+		},
 	}
 )

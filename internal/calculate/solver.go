@@ -10,6 +10,7 @@ import (
 type solver struct {
 	meals     []pMeal
 	userFoods map[string]int // 当前拥有的数量
+	userSeeds map[string]int // 拥有的种子
 
 	threshold           float64
 	acceptableDeviation int
@@ -28,6 +29,7 @@ type currParams struct {
 	currAttraction int
 	currTimeCost   float64 // 种地的消耗时间
 	currTimeWait   float64 // 商店可能的等待时间
+	currTimeSeed   float64 // 种子消耗时间
 	currTimeTrue   float64
 	currCoinCost   float64
 	currRes        map[string]int
@@ -39,15 +41,16 @@ type currParams struct {
 type Result struct {
 	Result           map[string]int
 	ResTimeCost      float64
-	ResTimeCostFarm  float64
-	ResTimeCostStore float64
+	ResTimeCostFarm  float64 // 种地
+	ResTimeCostStore float64 // 商店直接买
+	ResTimeCostSeed  float64 // 买种子的消耗
 	ResCoinCost      float64
 	ResAttraction    int
 	ResNeededFood    map[string]int
 	ResBlocks        map[string]int
 }
 
-func (s *solver) checkParams() bool {
+func (s *solver) validate() bool {
 	if s.p.currAttraction > s.targetAttraction+s.acceptableDeviation ||
 		s.p.currAttraction < s.targetAttraction-s.acceptableDeviation {
 		return false
@@ -77,20 +80,21 @@ func (s *solver) checkParams() bool {
 		return false
 	}
 	// 尝试街区
-	blockSolver := blocks.NewBlockSlover(s.p.currNeededFood)
+	blockSolver := blocks.NewBlockSlover(s.p.currNeededFood, s.userSeeds)
 	res := blockSolver.Solve()
 	s.p.currTimeTrue = res.ResTimeCost
 	s.p.currNeededFood = res.ResFoodNeeded
 	s.p.currTimeWait = res.StoreTimeCost
 	s.p.currTimeCost = res.FarmTimeCost
 	s.p.currBlocks = res.ResResult
+	s.p.currTimeSeed = res.SeedTimeCost
 	return true
 }
 
 func (s *solver) solve(depth int) {
 	if depth == len(s.meals) {
 		s.p.reset2()
-		if !s.checkParams() {
+		if !s.validate() {
 			return
 		}
 		if s.p.currTimeTrue < s.res.ResTimeCost {
@@ -104,7 +108,9 @@ func (s *solver) solve(depth int) {
 			s.res.ResNeededFood = s.p.currNeededFood
 			s.res.ResTimeCostFarm = s.p.currTimeCost
 			s.res.ResTimeCostStore = s.p.currTimeWait
+			s.res.ResTimeCostSeed = s.p.currTimeSeed
 			s.res.ResBlocks = s.p.currBlocks
+
 			//fmt.Println(s.res.ResTimeCostStore)
 			//fmt.Println(s.res.ResNeededFood)
 		}
@@ -140,7 +146,8 @@ func (s *currParams) reset() {
 }
 
 // NewSolver TODO
-func NewSolver(dollName string, targetAttraction int, threshold float64, acceptableDeviation int, userFoods map[string]int) *solver {
+func NewSolver(dollName string, targetAttraction int, threshold float64, acceptableDeviation int,
+	userFoods map[string]int, userSeeds map[string]int) *solver {
 	s := &solver{
 		meals:               nil,
 		threshold:           threshold,
@@ -149,6 +156,7 @@ func NewSolver(dollName string, targetAttraction int, threshold float64, accepta
 		res:                 Result{},
 		p:                   currParams{},
 		userFoods:           userFoods,
+		userSeeds:           userSeeds,
 	}
 	currDoll := doll2.SimplifiedDolls[dollName]
 	s.meals = make([]pMeal, 0, 100)
@@ -166,8 +174,9 @@ func NewSolver(dollName string, targetAttraction int, threshold float64, accepta
 }
 
 // Solve TODO
-func Solve(name string, target int, threshold float64, acceptableDeviation int, userFoods map[string]int) Result {
-	solver := NewSolver(name, target, threshold, acceptableDeviation, userFoods)
+func Solve(name string, target int, threshold float64, acceptableDeviation int, userFoods map[string]int,
+	userSeeds map[string]int) Result {
+	solver := NewSolver(name, target, threshold, acceptableDeviation, userFoods, userSeeds)
 	solver.solve(0)
 	return solver.res
 }
